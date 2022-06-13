@@ -1,7 +1,10 @@
 const express = require("express");
+const bcrypt = require("bcrypt-nodejs");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const database = {
   users: [
@@ -33,7 +36,7 @@ app.post("/signin", (req, res) => {
     req.body.email === database.users[0].email &&
     req.body.password === database.users[0].password
   ) {
-    res.json("Success!");
+    res.json(database.users[0]);
   } else {
     res.status(400).json("Error logging in.");
   }
@@ -46,7 +49,6 @@ app.post("/register", (req, res) => {
     id: "125",
     name: name,
     email: email,
-    password: password,
     entries: 0,
     joined: new Date(),
   });
@@ -81,6 +83,25 @@ app.put("/image", (req, res) => {
     res.status(400).json("Not found!");
   }
 });
+
+// bcrypt.hash(password, null, null, function (err, hash) {
+//   console.log(hash);
+// });
+// Load hash from your password DB.
+// bcrypt.compare(
+//   "miguel",
+//   "$2a$10$dE9qkiCUnb03TOZVwK7sHuq9TgPcLHiIoPFRMvKOM3U5jsUjVrzN2",
+//   function (err, res) {
+//     console.log("first guess", res);
+//   }
+// );
+// bcrypt.compare(
+//   "veggies",
+//   "$2a$10$dE9qkiCUnb03TOZVwK7sHuq9TgPcLHiIoPFRMvKOM3U5jsUjVrzN2",
+//   function (err, res) {
+//     console.log("second guess", res);
+//   }
+// );
 
 app.listen(3000, () => {
   console.log("App is running on port 3000");
