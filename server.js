@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt-nodejs");
 const cors = require("cors");
 const knex = require("knex");
+const { json } = require("body-parser");
 
 const db = knex({
   client: "pg",
@@ -12,12 +13,6 @@ const db = knex({
     database: "smartbrain",
   },
 });
-
-db.select("*")
-  .from("users")
-  .then((data) => {
-    console.log(data);
-  });
 
 const app = express();
 app.use(express.json());
@@ -77,16 +72,17 @@ app.post("/register", (req, res) => {
 
 app.get("/profile/:id", (req, res) => {
   const { id } = req.params;
-  let found = false;
-  database.users.forEach((user) => {
-    if (user.id === id) {
-      found = true;
-      return res.json(user);
-    }
-  });
-  if (!found) {
-    res.status(400).json("Not found!");
-  }
+  db.select("*")
+    .from("users")
+    .where({ id })
+    .then((user) => {
+      if (user.length > 0) {
+        res.json(user[0]);
+      } else {
+        res.status(400).json("User not found.");
+      }
+    })
+    .catch((err) => json.status(400).json("Error getting user"));
 });
 
 app.put("/image", (req, res) => {
