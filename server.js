@@ -57,17 +57,30 @@ app.post("/signin", (req, res) => {
 
 app.post("/register", (req, res) => {
   const { email, name, password } = req.body;
-  db("users")
-    .returning("*")
-    .insert({
-      email: email,
-      name: name,
-      joined: new Date(),
-    })
-    .then((user) => {
-      res.json(user[0]);
-    })
-    .catch((err) => res.status(400).json(err));
+  const hash = bcrypt.hashSync(password);
+  db.transaction((trx) => {
+    trx
+      .insert({
+        hash: hash,
+        email: email,
+      })
+      .into("login")
+      .returning("email")
+      .then((loginEmail) => {
+        return trx("users")
+          .returning("*")
+          .insert({
+            email: loginEmail[0].email,
+            name: name,
+            joined: new Date(),
+          })
+          .then((user) => {
+            res.json(user[0]);
+          });
+      })
+      .then(trx.commit)
+      .catch(trx.rollback);
+  }).catch((err) => res.status(400).json("Unable to register."));
 });
 
 app.get("/profile/:id", (req, res) => {
@@ -96,25 +109,6 @@ app.put("/image", (req, res) => {
     })
     .catch((err) => res.status(400).json("Unable to get entries."));
 });
-
-// bcrypt.hash(password, null, null, function (err, hash) {
-//   console.log(hash);
-// });
-// Load hash from your password DB.
-// bcrypt.compare(
-//   "miguel",
-//   "$2a$10$dE9qkiCUnb03TOZVwK7sHuq9TgPcLHiIoPFRMvKOM3U5jsUjVrzN2",
-//   function (err, res) {
-//     console.log("first guess", res);
-//   }
-// );
-// bcrypt.compare(
-//   "veggies",
-//   "$2a$10$dE9qkiCUnb03TOZVwK7sHuq9TgPcLHiIoPFRMvKOM3U5jsUjVrzN2",
-//   function (err, res) {
-//     console.log("second guess", res);
-//   }
-// );
 
 app.listen(3000, () => {
   console.log("App is running on port 3000");
